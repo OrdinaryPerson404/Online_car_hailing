@@ -113,11 +113,16 @@ class Main {
     - Label lblStatus
     - Label lblPassenger
     - Label lblDriver
+    - Label lblStart
+    - Label lblEnd
+    - Label lblDistance
+    - Label lblFare
     - VBox cardBox
     - Button btnNext
     - Button btnReset
-    - Slider sliderDuration
-    - TextArea txtLog
+    - Button btnFadeIn
+    - Button btnFadeOut
+    - Button btnAlternate
     
     + void start(Stage primaryStage)
     - void initBusinessData()
@@ -130,7 +135,6 @@ class Main {
     - FadeTransition createFadeIn(Node node)
     - FadeTransition createFadeOut(Node node)
     - void updateBusinessLogic(OrderStatus status)
-    - void log(String message)
     
     + static void main(String[] args)
 }
