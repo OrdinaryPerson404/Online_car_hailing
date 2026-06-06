@@ -1,0 +1,177 @@
+@startuml 网约车系统类图
+
+skinparam backgroundColor white
+skinparam classBackgroundColor #FEFECE
+skinparam classBorderColor black
+skinparam stereotypeBackgroundColor #142B80
+
+title 网约车模拟系统 - 类图
+
+' 接口
+interface Validatable {
+    + boolean validate()
+}
+
+' 抽象类
+abstract class Person {
+    # String id
+    # String name
+    # String phone
+    + Person(String id, String name, String phone)
+    + abstract String getRole()
+    + boolean validate()
+    + String getId()
+    + String getName()
+    + String getPhone()
+}
+
+' 枚举
+enum OrderStatus {
+    CREATED
+    ACCEPTED
+    ON_TRIP
+    ARRIVED
+    PAID
+    CANCELLED
+    TIMEOUT
+}
+
+' 实体类
+class Location {
+    - String address
+    + Location(String address)
+    + String getAddress()
+    + boolean validate()
+    + String toString()
+}
+
+class Vehicle {
+    - String plateNumber
+    - String model
+    + Vehicle(String plateNumber, String model)
+    + String getPlateNumber()
+    + String getModel()
+    + String toString()
+}
+
+class Passenger {
+    - double balance
+    + Passenger(String id, String name, String phone, double balance)
+    + boolean deduct(double amount)
+    + double getBalance()
+    + boolean pay(Order order)
+    + Order createOrder(String orderId, Location start, Location end, double distance)
+    + String getRole()
+    + String toString()
+}
+
+class Driver {
+    - boolean available
+    - double todayIncome
+    - Vehicle vehicle
+    + Driver(String id, String name, String phone, Vehicle vehicle)
+    + boolean acceptOrder(Order order)
+    + boolean startTrip(Order order)
+    + boolean endTrip(Order order)
+    + void addIncome(double amount)
+    + boolean isAvailable()
+    + double getTodayIncome()
+    + Vehicle getVehicle()
+    + String getRole()
+    + boolean validate()
+    + String toString()
+}
+
+class Order {
+    - String orderId
+    - Passenger passenger
+    - Driver driver
+    - Location start
+    - Location end
+    - double distance
+    - double fare
+    - OrderStatus status
+    + Order(String orderId, Passenger passenger, Location start, Location end, double distance)
+    + boolean acceptBy(Driver driver)
+    + boolean startTrip()
+    + boolean endTrip()
+    + boolean pay()
+    + boolean cancel()
+    + boolean timeout()
+    + void calculateFare()
+    + boolean validate()
+    + String getOrderId()
+    + Passenger getPassenger()
+    + Driver getDriver()
+    + Location getStart()
+    + Location getEnd()
+    + double getDistance()
+    + double getFare()
+    + OrderStatus getStatus()
+    + String toString()
+}
+
+class FareCalculator {
+    {static} - double BASE_FARE
+    {static} - double BASE_DISTANCE
+    {static} - double EXTRA_RATE
+    - FareCalculator()
+    {static} + double calculate(double distance)
+}
+
+' 关系定义
+
+' Person 实现 Validatable 接口
+Person ..|> Validatable : implements
+
+' Passenger 和 Driver 继承 Person
+Passenger --|> Person : extends
+Driver --|> Person : extends
+
+' Location 实现 Validatable 接口
+Location ..|> Validatable : implements
+
+' Order 实现 Validatable 接口
+Order ..|> Validatable : implements
+
+' Driver 组合 Vehicle (强依赖，通过构造方法注入)
+Driver o-- Vehicle : composition >
+
+' Order 关联 Passenger
+Order --> Passenger : association >
+
+' Order 关联 Driver
+Order --> Driver : association >
+
+' Order 关联 Location (起点和终点)
+Order --> Location : association >
+
+' Order 使用 OrderStatus 枚举
+Order --> OrderStatus : association >
+
+' Order 依赖 FareCalculator (调用静态方法)
+Order ..> FareCalculator : uses >
+
+note right of FareCalculator
+  工具类
+  私有构造方法
+  防止实例化
+end note
+
+note right of Driver
+  组合关系
+  必须绑定车辆
+  通过构造方法注入
+end note
+
+note bottom of Order
+  核心状态机
+  CREATED -> ACCEPTED -> ON_TRIP
+  -> ARRIVED -> PAID
+  
+  异常流转:
+  CREATED -> CANCELLED
+  CREATED -> TIMEOUT
+end note
+
+@enduml

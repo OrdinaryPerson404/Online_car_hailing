@@ -1,0 +1,180 @@
+@startuml FadeTransition演示系统类图
+
+skinparam backgroundColor white
+skinparam classBackgroundColor #FEFECE
+skinparam classBorderColor black
+
+title FadeTransition 技术演示 - 网约车订单系统
+
+' 接口
+interface Validatable {
+    + boolean validate()
+}
+
+' 抽象类
+abstract class Person {
+    # String id
+    # String name
+    # String phone
+    + Person(String id, String name, String phone)
+    + abstract String getRole()
+    + boolean validate()
+}
+
+' 枚举
+enum OrderStatus {
+    CREATED
+    ACCEPTED
+    ON_TRIP
+    ARRIVED
+    PAID
+    CANCELLED
+    TIMEOUT
+}
+
+' 实体类
+class Location {
+    - String address
+    + Location(String address)
+    + String getAddress()
+    + boolean validate()
+}
+
+class Vehicle {
+    - String plateNumber
+    - String model
+    + Vehicle(String plateNumber, String model)
+    + String getPlateNumber()
+    + String getModel()
+}
+
+class Passenger {
+    - double balance
+    + Passenger(String id, String name, String phone, double balance)
+    + boolean deduct(double amount)
+    + double getBalance()
+    + boolean pay(Order order)
+    + Order createOrder(...)
+    + String getRole()
+}
+
+class Driver {
+    - boolean available
+    - double todayIncome
+    - Vehicle vehicle
+    + Driver(String id, String name, String phone, Vehicle vehicle)
+    + boolean acceptOrder(Order order)
+    + boolean startTrip(Order order)
+    + boolean endTrip(Order order)
+    + void addIncome(double amount)
+    + boolean isAvailable()
+    + Vehicle getVehicle()
+    + String getRole()
+    + boolean validate()
+}
+
+class Order {
+    - String orderId
+    - Passenger passenger
+    - Driver driver
+    - Location start
+    - Location end
+    - double distance
+    - double fare
+    - OrderStatus status
+    + Order(String orderId, Passenger passenger, ...)
+    + boolean acceptBy(Driver driver)
+    + boolean startTrip()
+    + boolean endTrip()
+    + boolean pay()
+    + boolean cancel()
+    + boolean timeout()
+    + void calculateFare()
+    + boolean validate()
+}
+
+class FareCalculator {
+    {static} - double BASE_FARE
+    {static} - double BASE_DISTANCE
+    {static} - double EXTRA_RATE
+    - FareCalculator()
+    {static} + double calculate(double distance)
+}
+
+' JavaFX UI 类（主入口）
+class Main {
+    - Passenger passenger
+    - Driver driver
+    - Order currentOrder
+    - OrderStatus[] statusSequence
+    - int currentStatusIndex
+    
+    - Label lblOrderId
+    - Label lblStatus
+    - Label lblPassenger
+    - Label lblDriver
+    - VBox cardBox
+    - Button btnNext
+    - Button btnReset
+    - Slider sliderDuration
+    - TextArea txtLog
+    
+    + void start(Stage primaryStage)
+    - void initBusinessData()
+    - VBox createInfoPanel()
+    - VBox createControlPanel()
+    - void handleNextStep()
+    - void handleFadeIn()
+    - void handleFadeOut()
+    - void handleAlternate()
+    - FadeTransition createFadeIn(Node node)
+    - FadeTransition createFadeOut(Node node)
+    - void updateBusinessLogic(OrderStatus status)
+    - void log(String message)
+    
+    + static void main(String[] args)
+}
+
+' 关系定义
+Person ..|> Validatable : implements
+Passenger --|> Person : extends
+Driver --|> Person : extends
+Location ..|> Validatable : implements
+Order ..|> Validatable : implements
+
+Driver o-- Vehicle : composition
+Order --> Passenger : association
+Order --> Driver : association
+Order --> Location : association
+Order --> OrderStatus : association
+Order ..> FareCalculator : uses
+
+Main --> Order : uses
+Main --> Passenger : uses
+Main --> Driver : uses
+Main ..> FadeTransition : creates
+
+note right of Main
+  <b>FadeTransition 应用点</b>
+  
+  1. 链式动画
+     fadeOut → 更新数据 → fadeIn
+  
+  2. 基础淡入
+     fromValue=0.0 → toValue=1.0
+  
+  3. 基础淡出
+     fromValue=1.0 → toValue=0.0
+  
+  4. 交替动画
+     autoReverse=true
+     cycleCount=2
+end note
+
+note bottom of Order
+  <b>状态流转</b>
+  CREATED → ACCEPTED → ON_TRIP
+  → ARRIVED → PAID
+end note
+
+@enduml
