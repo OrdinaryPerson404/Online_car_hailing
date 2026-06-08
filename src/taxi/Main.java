@@ -1,333 +1,235 @@
 package taxi;
-import javafx.animation.FadeTransition;
+
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.text.FontWeight;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.animation.FadeTransition;
 import javafx.util.Duration;
-public class Main extends Application {
-    // 业务对象
-    private Passenger passenger;
-    private Driver driver;
-    private Order currentOrder;
-    private OrderStatus[] statusSequence;
-    private int currentStatusIndex;
 
-    // UI 组件
-    private Label lblOrderId;
-    private Label lblStatus;
-    private Label lblPassenger;
-    private Label lblDriver;
-    private Label lblStart;
-    private Label lblEnd;
-    private Label lblDistance;
-    private Label lblFare;
+public class Main extends Application {
+
+    private Passenger passenger1;
+    private Driver driver1;
+    private Order currentOrder;
+    private TextArea logArea;
     
-    private VBox cardBox;
-    private Button btnNext;
-    private Button btnReset;
-    private Button btnFadeIn;
-    private Button btnFadeOut;
-    private Button btnAlternate;
+    private Button acceptBtn;
+    private Button startBtn;
+    private Button endBtn;
+    private Button payBtn;
 
     @Override
     public void start(Stage primaryStage) {
-        initBusinessData();
+        initializeData();
         
-        BorderPane root = new BorderPane();
-        root.setPadding(new Insets(15));
-        root.setStyle("-fx-background-color: #f0f0f0;");
-
-        // 标题
-        Label title = createTitle("网约车订单系统 - FadeTransition 演示");
-        root.setTop(title);
-        BorderPane.setMargin(title, new Insets(0, 0, 15, 0));
-
-        // 左侧：订单信息区
-        VBox infoPanel = createInfoPanel();
+        VBox root = new VBox(15);
+        root.setPadding(new Insets(20));
+        root.setAlignment(Pos.TOP_CENTER);
         
-        // 右侧：动画控制区
-        VBox controlPanel = createControlPanel();
+        Label titleLabel = new Label("🚗 网约车订单管理系统");
+        titleLabel.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
         
-        // 组合左右面板
-        HBox centerBox = new HBox(15, infoPanel, controlPanel);
-        root.setCenter(centerBox);
-
-        Scene scene = new Scene(root, 900, 650);
-        primaryStage.setTitle("FadeTransition 技术演示 - 网约车系统");
+        VBox infoBox = createInfoPanel();
+        
+        HBox buttonBox = createActionButtons();
+        
+        logArea = new TextArea();
+        logArea.setEditable(false);
+        logArea.setPrefHeight(200);
+        logArea.setStyle("-fx-font-family: 'Courier New'; -fx-font-size: 12px;");
+        logArea.appendText("系统初始化完成...\n");
+        logArea.appendText("乘客 " + passenger1.getName() + " 已创建订单\n");
+        logArea.appendText("等待司机接单...\n\n");
+        
+        root.getChildren().addAll(titleLabel, infoBox, buttonBox, new Label("操作日志:"), logArea);
+        
+        Scene scene = new Scene(root, 700, 650);
+        primaryStage.setTitle("网约车系统 - FadeTransition 交互演示");
         primaryStage.setScene(scene);
         primaryStage.show();
-
-        updateDisplay();
     }
-
-    /**
-     * 初始化业务数据
-     */
-    private void initBusinessData() {
-        passenger = new Passenger("P001", "张三", "13800138001", 100.0);
-        Vehicle vehicle = new Vehicle("京A12345", "丰田卡罗拉");
-        driver = new Driver("D001", "王师傅", "13900139001", vehicle);
+    
+    private void initializeData() {
+        passenger1 = new Passenger("1", "张三", "130", 100.0);
+        Vehicle vehicle1 = new Vehicle("京A88888", "丰田卡罗拉");
+        driver1 = new Driver("D001", "王师傅", "13900139001", vehicle1);
         
-        Location start = new Location("北京市朝阳区建国路100号");
-        Location end = new Location("北京市海淀区中关村大街200号");
-        currentOrder = new Order("ORD001", passenger, start, end, 8.5);
-        
-        statusSequence = new OrderStatus[] {
-            OrderStatus.CREATED,
-            OrderStatus.ACCEPTED,
-            OrderStatus.ON_TRIP,
-            OrderStatus.ARRIVED,
-            OrderStatus.PAID
-        };
-        currentStatusIndex = 0;
+        Location start = new Location("我家");
+        Location end = new Location("NCHU");
+        currentOrder = passenger1.createOrder("ORD001", start, end, 8.5);
     }
-
-    /**
-     * 创建标题
-     */
-    private Label createTitle(String text) {
-        Label label = new Label(text);
-        label.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
-        label.setAlignment(Pos.CENTER);
-        label.setMaxWidth(Double.MAX_VALUE);
-        return label;
-    }
-
-    /**
-     * 创建左侧订单信息面板
-     */
+    
     private VBox createInfoPanel() {
-        VBox panel = new VBox(10);
-        panel.setPadding(new Insets(15));
-        panel.setStyle("-fx-background-color: white; -fx-border-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 2);");
-        panel.setPrefWidth(350);
-
-        Label titleLabel = new Label("订单详情");
-        titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #34495e;");
-
-        cardBox = new VBox(8);
-        cardBox.setPadding(new Insets(10));
-        cardBox.setStyle("-fx-background-color: #ecf0f1; -fx-border-radius: 5;");
-
-        lblOrderId = createInfoItem("订单编号:");
-        lblStatus = createInfoItem("订单状态:");
-        lblPassenger = createInfoItem("乘  客:");
-        lblDriver = createInfoItem("司  机:");
-        lblStart = createInfoItem("起  点:");
-        lblEnd = createInfoItem("终  点:");
-        lblDistance = createInfoItem("里  程:");
-        lblFare = createInfoItem("费  用:");
-
-        cardBox.getChildren().addAll(
-            lblOrderId, lblStatus, lblPassenger, lblDriver,
-            lblStart, lblEnd, lblDistance, lblFare
-        );
-
-        panel.getChildren().addAll(titleLabel, cardBox);
-        return panel;
-    }
-
-    /**
-     * 创建信息项 Label
-     */
-    private Label createInfoItem(String prefix) {
-        Label label = new Label(prefix);
-        label.setStyle("-fx-font-size: 14px; -fx-text-fill: #2c3e50;");
-        return label;
-    }
-
-    /**
-     * 创建右侧控制面板
-     */
-    private VBox createControlPanel() {
-        VBox panel = new VBox(15);
-        panel.setPadding(new Insets(15));
-        panel.setStyle("-fx-background-color: white; -fx-border-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 2);");
-        panel.setPrefWidth(450);
-
-        // 状态切换区
-        Label section1 = createSectionTitle("① 订单状态切换（链式动画）");
-        btnNext = createButton("下一步 →", this::handleNextStep);
-        btnReset = createButton("重置", this::handleReset);
-        HBox box1 = new HBox(10, btnNext, btnReset);
-
-        // 基础动画演示区
-        Label section2 = createSectionTitle("② 基础动画演示");
-        btnFadeIn = createButton("淡入效果", this::handleFadeIn);
-        btnFadeOut = createButton("淡出效果", this::handleFadeOut);
-        btnAlternate = createButton("交替动画", this::handleAlternate);
-        HBox box2 = new HBox(10, btnFadeIn, btnFadeOut, btnAlternate);
-
-        panel.getChildren().addAll(
-            section1, box1,
-            section2, box2
-        );
-        return panel;
-    }
-
-    /**
-     * 创建区域标题
-     */
-    private Label createSectionTitle(String text) {
-        Label label = new Label(text);
-        label.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
-        return label;
-    }
-
-    /**
-     * 创建按钮
-     */
-    private Button createButton(String text, Runnable action) {
-        Button button = new Button(text);
-        button.setStyle(
-            "-fx-font-size: 13px; -fx-padding: 8 15; -fx-border-radius: 5;"
-        );
-        button.setOnAction(e -> action.run());
-        return button;
-    }
-
-    /**
-     * 更新显示
-     */
-    private void updateDisplay() {
-        lblOrderId.setText("订单编号: " + currentOrder.getOrderId());
-        lblStatus.setText("订单状态: " + currentOrder.getStatus());
-        lblPassenger.setText("乘  客: " + currentOrder.getPassenger().getName());
-        lblDriver.setText("司  机: " + (currentOrder.getDriver() != null ? currentOrder.getDriver().getName() : "待分配"));
-        lblStart.setText("起  点: " + currentOrder.getStart().getAddress());
-        lblEnd.setText("终  点: " + currentOrder.getEnd().getAddress());
-        lblDistance.setText("里  程: " + currentOrder.getDistance() + " km");
-        lblFare.setText("费  用: ¥" + String.format("%.2f", currentOrder.getFare()));
-    }
-
-    /**
-     * 处理下一步按钮（链式动画演示）
-     */
-    private void handleNextStep() {
-        if (currentStatusIndex >= statusSequence.length) {
-            return;
-        }
-
-        OrderStatus nextStatus = statusSequence[currentStatusIndex];
+        VBox box = new VBox(10);
+        box.setStyle("-fx-background-color: #ecf0f1; -fx-padding: 15; -fx-background-radius: 10;");
         
-        // 步骤1: 淡出旧卡片
-        FadeTransition fadeOut = createFadeOut(cardBox);
-        fadeOut.setOnFinished(event -> {
-            // 步骤2: 更新业务逻辑
-            updateBusinessLogic(nextStatus);
-            updateDisplay();
-            
-            // 步骤3: 淡入新卡片
-            FadeTransition fadeIn = createFadeIn(cardBox);
-            fadeIn.setOnFinished(e -> {
-                // 如果是 ARRIVED 状态，自动计算费用
-                if (nextStatus == OrderStatus.ARRIVED) {
-                    currentOrder.calculateFare();
-                    updateDisplay();
-                }
-            });
-            fadeIn.play();
+        Label orderLabel = new Label("订单信息: " + currentOrder.getOrderId());
+        orderLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+        
+        Label statusLabel = new Label("当前状态: " + currentOrder.getStatus());
+        statusLabel.setId("statusLabel");
+        statusLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #e74c3c;");
+        
+        Label detailLabel = new Label(
+            String.format("起点: %s → 终点: %s | 里程: %.1fkm | 费用: ¥%.2f", 
+                currentOrder.getStart().getAddress(),
+                currentOrder.getEnd().getAddress(),
+                currentOrder.getDistance(),
+                currentOrder.getFare())
+        );
+        detailLabel.setStyle("-fx-font-size: 12px;");
+        
+        box.getChildren().addAll(orderLabel, statusLabel, detailLabel);
+        return box;
+    }
+    
+    private HBox createActionButtons() {
+        acceptBtn = createAnimatedButton("👨‍✈️ 司机接单", "#3498db");
+        startBtn = createAnimatedButton("🚀 开始行程", "#f39c12");
+        endBtn = createAnimatedButton("🏁 结束行程", "#9b59b6");
+        payBtn = createAnimatedButton("💰 乘客支付", "#27ae60");
+        
+        acceptBtn.setOnAction(e -> handleAccept());
+        startBtn.setOnAction(e -> handleStartTrip());
+        endBtn.setOnAction(e -> handleEndTrip());
+        payBtn.setOnAction(e -> handlePayment());
+        
+        updateButtonStates();
+        
+        HBox box = new HBox(10);
+        box.setAlignment(Pos.CENTER);
+        box.getChildren().addAll(acceptBtn, startBtn, endBtn, payBtn);
+        return box;
+    }
+    
+    private Button createAnimatedButton(String text, String color) {
+        Button btn = new Button(text);
+        btn.setStyle(String.format(
+            "-fx-font-size: 13px; -fx-padding: 12 20; " +
+            "-fx-background-color: %s; -fx-text-fill: white; " +
+            "-fx-background-radius: 8; -fx-cursor: hand;",
+            color
+        ));
+        
+        // 效果 A: 鼠标悬停时淡出（幽灵按钮效果）
+        btn.setOnMouseEntered(e -> {
+            FadeTransition ft = new FadeTransition(Duration.millis(200), btn);
+            ft.setToValue(0.6);
+            ft.play();
         });
         
-        fadeOut.play();
-        currentStatusIndex++;
+        btn.setOnMouseExited(e -> {
+            FadeTransition ft = new FadeTransition(Duration.millis(200), btn);
+            ft.setToValue(1.0);
+            ft.play();
+        });
+        
+        return btn;
     }
-
-    /**
-     * 更新业务逻辑
-     */
-    private void updateBusinessLogic(OrderStatus status) {
-        switch (status) {
-            case CREATED:
-                break;
-            case ACCEPTED:
-                driver.acceptOrder(currentOrder);
-                break;
-            case ON_TRIP:
-                currentOrder.startTrip();
-                break;
-            case ARRIVED:
-                currentOrder.endTrip();
-                break;
-            case PAID:
-                currentOrder.pay();
-                break;
+    
+    private void handleAccept() {
+        logArea.appendText("\n>>> 司机尝试接单...\n");
+        boolean success = driver1.acceptOrder(currentOrder);
+        
+        if (success) {
+            // 效果 B: 成功时按钮闪烁庆祝
+            triggerSuccessAnimation(acceptBtn);
+            logArea.appendText("✓ 接单成功！司机: " + driver1.getName() + "\n");
+        } else {
+            logArea.appendText("✗ 接单失败\n");
         }
-    }
-
-    /**
-     * 处理重置按钮
-     */
-    private void handleReset() {
-        initBusinessData();
-        currentStatusIndex = 0;
-        updateDisplay();
-        cardBox.setOpacity(1.0);
-    }
-
-    /**
-     * 处理淡入按钮
-     */
-    private void handleFadeIn() {
-        cardBox.setOpacity(0.0);
-        FadeTransition fadeIn = createFadeIn(cardBox);
-        fadeIn.play();
-    }
-
-    /**
-     * 处理淡出按钮
-     */
-    private void handleFadeOut() {
-        cardBox.setOpacity(1.0);
-        FadeTransition fadeOut = createFadeOut(cardBox);
-        fadeOut.play();
-    }
-    /**
-     * 处理交替动画按钮
-     */
-    private void handleAlternate() {
-        cardBox.setOpacity(1.0);
         
-        FadeTransition alternate = new FadeTransition();
-        alternate.setNode(cardBox);
-        alternate.setFromValue(1.0);
-        alternate.setToValue(0.0);
-        alternate.setDuration(Duration.seconds(2.5));
-        alternate.setAutoReverse(true);
-        alternate.setCycleCount(2);
-        
-        alternate.setOnFinished(e -> cardBox.setOpacity(1.0));
-        
-        alternate.play();
+        updateUI();
     }
-    /**
-     * 创建淡入动画
-     */
-    private FadeTransition createFadeIn(javafx.scene.Node node) {
-        FadeTransition ft = new FadeTransition();
-        ft.setNode(node);
-        ft.setFromValue(0.0);
-        ft.setToValue(1.0);
-        ft.setDuration(Duration.seconds(2.5));
-        return ft;
+    
+    private void handleStartTrip() {
+        logArea.appendText("\n>>> 开始行程...\n");
+        boolean success = driver1.startTrip(currentOrder);
+        
+        if (success) {
+            triggerSuccessAnimation(startBtn);
+            logArea.appendText("✓ 行程已开始\n");
+        } else {
+            logArea.appendText("✗ 开始行程失败\n");
+        }
+        
+        updateUI();
     }
-    /**
-     * 创建淡出动画
-     */
-    private FadeTransition createFadeOut(javafx.scene.Node node) {
-        FadeTransition ft = new FadeTransition();
-        ft.setNode(node);
+    
+    private void handleEndTrip() {
+        logArea.appendText("\n>>> 结束行程...\n");
+        boolean success = driver1.endTrip(currentOrder);
+        
+        if (success) {
+            triggerSuccessAnimation(endBtn);
+            logArea.appendText(String.format("✓ 行程结束，费用: ¥%.2f\n", currentOrder.getFare()));
+        } else {
+            logArea.appendText("✗ 结束行程失败\n");
+        }
+        
+        updateUI();
+    }
+    
+    private void handlePayment() {
+        logArea.appendText("\n>>> 乘客支付...\n");
+        boolean success = passenger1.pay(currentOrder);
+        
+        if (success) {
+            triggerSuccessAnimation(payBtn);
+            logArea.appendText("✓ 支付成功！\n");
+            logArea.appendText(String.format("  乘客余额: ¥%.2f\n", passenger1.getBalance()));
+            logArea.appendText(String.format("  司机收入: ¥%.2f\n", driver1.getTodayIncome()));
+        } else {
+            logArea.appendText("✗ 支付失败（余额不足）\n");
+        }
+        
+        updateUI();
+    }
+    
+    private void triggerSuccessAnimation(Button btn) {
+        // 效果 B: 点击后高频循环闪烁（庆祝效果）
+        FadeTransition ft = new FadeTransition(Duration.millis(80), btn);
         ft.setFromValue(1.0);
-        ft.setToValue(0.0);
-        ft.setDuration(Duration.seconds(2.5));
-        return ft;
+        ft.setToValue(0.3);
+        ft.setCycleCount(6);
+        ft.setAutoReverse(true);
+        ft.play();
     }
+    
+    private void updateUI() {
+        updateButtonStates();
+        updateStatusDisplay();
+    }
+    
+    private void updateButtonStates() {
+        OrderStatus status = currentOrder.getStatus();
+        
+        acceptBtn.setDisable(status != OrderStatus.CREATED);
+        startBtn.setDisable(status != OrderStatus.ACCEPTED);
+        endBtn.setDisable(status != OrderStatus.ON_TRIP);
+        payBtn.setDisable(status != OrderStatus.ARRIVED);
+        
+        acceptBtn.setOpacity(status != OrderStatus.CREATED ? 0.4 : 1.0);
+        startBtn.setOpacity(status != OrderStatus.ACCEPTED ? 0.4 : 1.0);
+        endBtn.setOpacity(status != OrderStatus.ON_TRIP ? 0.4 : 1.0);
+        payBtn.setOpacity(status != OrderStatus.ARRIVED ? 0.4 : 1.0);
+    }
+    
+    private void updateStatusDisplay() {
+        logArea.appendText("[状态更新] " + currentOrder.getStatus() + "\n");
+        logArea.appendText(currentOrder.toString() + "\n");
+        logArea.appendText(driver1.toString() + "\n");
+        logArea.appendText(passenger1.toString() + "\n\n");
+        logArea.setScrollTop(Double.MAX_VALUE);
+    }
+
     public static void main(String[] args) {
         launch(args);
     }
